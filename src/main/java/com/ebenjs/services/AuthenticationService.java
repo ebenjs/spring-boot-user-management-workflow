@@ -63,11 +63,11 @@ public class AuthenticationService {
         Optional<User> retrievedUser = userRepository.getUserByEmail(user.getEmail());
 
         if (retrievedUser.isPresent()) {
-            AuthenticationResponse authenticationResponse = new AuthenticationResponse();
-            authenticationResponse.setStatus(ApiResponseStatus.ERROR);
-            authenticationResponse.setMessage("User already exists");
-            authenticationResponse.setHttpCode(HttpStatus.CONFLICT.value());
-            return authenticationResponse;
+            return AuthenticationResponse.builder()
+                    .status(ApiResponseStatus.ERROR)
+                    .message("User already exists")
+                    .httpCode(HttpStatus.CONFLICT.value())
+                    .build();
         }
 
         user.setActivationHash(generateActivationHash());
@@ -76,89 +76,84 @@ public class AuthenticationService {
         sendConfirmationLink(user.getEmail(), user.getFirstname(), user.getActivationHash());
 
         String jwtToken = jwtService.generateToken(user);
-        AuthenticationResponse authenticationResponse = new AuthenticationResponse();
-        authenticationResponse.setStatus(ApiResponseStatus.SUCCESS);
-        authenticationResponse.setMessage("Registration succeeded");
-        authenticationResponse.setToken(jwtToken);
-        authenticationResponse.setData(user);
-        authenticationResponse.setHttpCode(HttpStatus.CREATED.value());
-        return authenticationResponse;
+        return AuthenticationResponse.builder()
+                .status(ApiResponseStatus.SUCCESS)
+                .message("Registration succeeded")
+                .token(jwtToken)
+                .data(user)
+                .httpCode(HttpStatus.CREATED.value())
+                .build();
     }
 
     public AuthenticationResponse login(LoginRequest loginRequest) {
-        System.out.println("Step 1");
         Optional<User> user = userRepository.getUserByEmail(loginRequest.getUsername());
 
-        if (user.isEmpty()){
-            System.out.println("It is empty");
-            AuthenticationResponse authenticationResponse = new AuthenticationResponse();
-            authenticationResponse.setStatus(ApiResponseStatus.ERROR);
-            authenticationResponse.setMessage("This user does not exist");
-            authenticationResponse.setHttpCode(HttpStatus.NOT_FOUND.value());
-            return authenticationResponse;
+        if (user.isEmpty()) {
+            return AuthenticationResponse.builder()
+                    .status(ApiResponseStatus.ERROR)
+                    .message("This user does not exist")
+                    .httpCode(HttpStatus.NOT_FOUND.value())
+                    .build();
         }
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
-        System.out.println("Step 2");
-
-        System.out.println("It is NOT empty");
-
         String jwtToken = jwtService.generateToken(user.get());
-        AuthenticationResponse authenticationResponse = new AuthenticationResponse();
-        authenticationResponse.setHttpCode(HttpStatus.OK.value());
-        authenticationResponse.setStatus(ApiResponseStatus.SUCCESS);
-        authenticationResponse.setToken(jwtToken);
-        authenticationResponse.setData(user.get());
-        authenticationResponse.setMessage("Login successfull");
-        return authenticationResponse;
+        return AuthenticationResponse.builder()
+                .status(ApiResponseStatus.SUCCESS)
+                .message("Login successful")
+                .token(jwtToken)
+                .data(user.get())
+                .httpCode(HttpStatus.OK.value())
+                .build();
     }
 
     public AuthenticationResponse validate(String token) {
         final String username = jwtService.extractUsername(token);
         final UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-        AuthenticationResponse authenticationResponse = new AuthenticationResponse();
         if (token != null && jwtService.isTokenValid(token, userDetails)) {
 
             User user = userRepository.getUserByEmail(username)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            authenticationResponse.setStatus(ApiResponseStatus.SUCCESS);
-            authenticationResponse.setMessage("Automatic login success");
-            authenticationResponse.setData(user);
-            authenticationResponse.setHttpCode(HttpStatus.OK.value());
-            return authenticationResponse;
+            return AuthenticationResponse.builder()
+                    .status(ApiResponseStatus.SUCCESS)
+                    .message("Automatic login success")
+                    .data(user)
+                    .httpCode(HttpStatus.OK.value())
+                    .build();
         }
 
-        authenticationResponse.setStatus(ApiResponseStatus.ERROR);
-        authenticationResponse.setMessage("Automatic login error");
-        authenticationResponse.setHttpCode(HttpStatus.UNAUTHORIZED.value());
-        return authenticationResponse;
+        return AuthenticationResponse.builder()
+                .status(ApiResponseStatus.ERROR)
+                .message("Automatic login error")
+                .httpCode(HttpStatus.UNAUTHORIZED.value())
+                .build();
     }
 
     public AuthenticationResponse activateUserAccount(String hash) {
         Optional<User> user = userRepository.getUserByActivationHash(hash);
-        if(user.isEmpty()){
-            AuthenticationResponse authenticationResponse = new AuthenticationResponse();
-            authenticationResponse.setStatus(ApiResponseStatus.ERROR);
-            authenticationResponse.setHttpCode(HttpStatus.NOT_FOUND.value());
-            authenticationResponse.setMessage("The activation is broken");
-            authenticationResponse.setRedirectionUrl(appBaseFrontUrl+"confirmation?status="+0);
-            return authenticationResponse;
+        if (user.isEmpty()) {
+            return AuthenticationResponse.builder()
+                    .status(ApiResponseStatus.ERROR)
+                    .httpCode(HttpStatus.NOT_FOUND.value())
+                    .message("The activation is broken")
+                    .redirectionUrl(appBaseFrontUrl + "confirmation?status=" + 0)
+                    .build();
         }
 
         user.get().setActivationHash("");
         user.get().setEnabled(true);
         userRepository.save(user.get());
 
-        AuthenticationResponse authenticationResponse = new AuthenticationResponse();
-        authenticationResponse.setStatus(ApiResponseStatus.SUCCESS);
-        authenticationResponse.setHttpCode(HttpStatus.OK.value());
-        authenticationResponse.setMessage("Account activated");
-        authenticationResponse.setRedirectionUrl(appBaseFrontUrl+"confirmation?status="+1);
-        return authenticationResponse;
+        return AuthenticationResponse.builder()
+                .status(ApiResponseStatus.SUCCESS)
+                .httpCode(HttpStatus.OK.value())
+                .message("Account activated")
+                .redirectionUrl(appBaseFrontUrl + "confirmation?status=" + 1)
+                .build();
     }
 
     private void sendConfirmationLink(String email, String name, String activationHash) {
@@ -166,14 +161,14 @@ public class AuthenticationService {
         String generatedActivationLink = generateActivationLink(activationHash);
         thymeleafContext.setVariable("name", name);
         thymeleafContext.setVariable("url", generatedActivationLink);
-        mailSendingService.sendHtmlWithTemplateToOne("user-c7c01a93515e3166@smtp.tickpluswise.com", email, "Testing", thymeleafContext,"emails/account-activation.html");
+        mailSendingService.sendHtmlWithTemplateToOne("user-c7c01a93515e3166@smtp.tickpluswise.com", email, "Testing", thymeleafContext, "emails/account-activation.html");
     }
 
     private String generateActivationLink(String activationHash) {
-        return appBaseUrl+apiSuffix+"auth/confirmation?hash="+activationHash;
+        return appBaseUrl + apiSuffix + "auth/confirmation?hash=" + activationHash;
     }
 
-    private String generateActivationHash(){
+    private String generateActivationHash() {
         return UUID.randomUUID().toString();
     }
 }

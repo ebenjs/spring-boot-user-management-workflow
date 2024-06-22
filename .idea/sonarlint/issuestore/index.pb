@@ -42,3 +42,9 @@ n
 :
 
 .gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302
+9
+	README.md,8\e\8ec9a00bfd09b3190ac6b22251dbb1aa95a0579d
+j
+:src/main/java/com/ebenjs/configurations/OpenAPIConfig.java,1\3\132edf6a8b8b79b013de1f8191f48408675627b8
+;
+qodana.yaml,8\5\85c3a901608a6b9adf48d245fa84828b66304e51
