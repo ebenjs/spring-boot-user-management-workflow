@@ -2,6 +2,7 @@ package com.ebenjs.services;
 
 import com.ebenjs.entities.User;
 import com.ebenjs.enums.ApiResponseStatus;
+import com.ebenjs.exceptions.UserBusinessLogicException;
 import com.ebenjs.models.requests.ForgotPasswordRequest;
 import com.ebenjs.models.requests.ResetPasswordRequest;
 import com.ebenjs.models.responses.BaseApiResponse;
@@ -9,12 +10,14 @@ import com.ebenjs.repositories.UserRepository;
 import com.ebenjs.services.mail.MailSendingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,11 +31,13 @@ public class UserService {
     @Value("${app.api.prefix}")
     private String apiSuffix;
 
+    private final MessageSource messageSource;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailSendingService mailSendingService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, MailSendingService mailSendingService) {
+    public UserService(MessageSource messageSource, UserRepository userRepository, PasswordEncoder passwordEncoder, MailSendingService mailSendingService) {
+        this.messageSource = messageSource;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailSendingService = mailSendingService;
@@ -40,12 +45,12 @@ public class UserService {
 
     public User getUserByEmail(String email) {
         return this.userRepository.getUserByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException(messageSource.getMessage("user.not.found", null, Locale.getDefault())));
     }
 
-    public User getUserByActivationHash(String hash) throws Exception {
+    public User getUserByActivationHash(String hash) throws UserBusinessLogicException {
         return  this.userRepository.getUserByActivationHash(hash)
-                .orElseThrow(()-> new Exception("Activation link is broken"));
+                .orElseThrow(()-> new UserBusinessLogicException("Activation link is broken"));
     }
 
     public Boolean isPasswordValid(User user, String password){
@@ -64,7 +69,7 @@ public class UserService {
             return BaseApiResponse.<Void>builder()
                     .status(ApiResponseStatus.ERROR)
                     .httpCode(HttpStatus.NOT_FOUND.value())
-                    .message("User not found")
+                    .message(messageSource.getMessage("user.not.found", null, Locale.getDefault()))
                     .build();
         }
 
@@ -92,7 +97,7 @@ public class UserService {
             return BaseApiResponse.<Void>builder()
                     .status(ApiResponseStatus.ERROR)
                     .httpCode(HttpStatus.NOT_FOUND.value())
-                    .message("User not found")
+                    .message(messageSource.getMessage("user.not.found", null, Locale.getDefault()))
                     .build();
         }
         return BaseApiResponse.<Void>builder()
@@ -117,7 +122,7 @@ public class UserService {
             return BaseApiResponse.<Void>builder()
                     .status(ApiResponseStatus.ERROR)
                     .httpCode(HttpStatus.NOT_FOUND.value())
-                    .message("User not found")
+                    .message(messageSource.getMessage("user.not.found", null, Locale.getDefault()))
                     .build();
         }
 
