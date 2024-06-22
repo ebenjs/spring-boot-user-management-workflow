@@ -10,6 +10,7 @@ import com.ebenjs.repositories.UserRepository;
 import com.ebenjs.security.JwtService;
 import com.ebenjs.services.mail.MailSendingService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +37,7 @@ public class AuthenticationService {
     @Value("${app.api.prefix}")
     private String apiSuffix;
 
+    private final MessageSource messageSource;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -42,7 +45,8 @@ public class AuthenticationService {
     private final UserDetailsService userDetailsService;
     private final MailSendingService mailSendingService;
 
-    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, UserDetailsService userDetailsService, MailSendingService mailSendingService) {
+    public AuthenticationService(MessageSource messageSource, UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, UserDetailsService userDetailsService, MailSendingService mailSendingService) {
+        this.messageSource = messageSource;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -116,7 +120,7 @@ public class AuthenticationService {
         if (token != null && jwtService.isTokenValid(token, userDetails)) {
 
             User user = userRepository.getUserByEmail(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    .orElseThrow(() -> new UsernameNotFoundException(messageSource.getMessage("user.not.found", null, Locale.getDefault())));
 
             return AuthenticationResponse.builder()
                     .status(ApiResponseStatus.SUCCESS)

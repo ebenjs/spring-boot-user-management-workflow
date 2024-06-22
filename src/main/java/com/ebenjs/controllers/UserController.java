@@ -2,6 +2,7 @@ package com.ebenjs.controllers;
 
 import com.ebenjs.entities.User;
 import com.ebenjs.enums.ApiResponseStatus;
+import com.ebenjs.exceptions.UserBusinessLogicException;
 import com.ebenjs.models.requests.ChangePasswordRequest;
 import com.ebenjs.models.requests.ForgotPasswordRequest;
 import com.ebenjs.models.requests.ResetPasswordRequest;
@@ -35,11 +36,11 @@ public class UserController {
     public BaseApiResponse<Void> updateUserPassword(@RequestBody ChangePasswordRequest changePasswordRequest, @AuthenticationPrincipal User user){
         Boolean isPasswordValid = this.userService.isPasswordValid(user, changePasswordRequest.getPassword());
         if (Boolean.FALSE.equals(isPasswordValid)){
-            throw new RuntimeException("Password is not valid");
+            throw new UserBusinessLogicException("Password is not valid");
         }
         User editedUser = this.userService.updateUserPassword(user, changePasswordRequest.getNewPassword());
         if (editedUser == null){
-            throw new RuntimeException("Password update failed");
+            throw new UserBusinessLogicException("Password update failed");
         }
 
         return BaseApiResponse.<Void>builder()
