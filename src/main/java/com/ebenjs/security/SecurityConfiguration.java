@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -27,9 +26,12 @@ public class SecurityConfiguration {
         httpSecurity
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorization -> authorization
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/index.html","/swagger*/**", "/webjars/**").permitAll()
                         .requestMatchers("/confirmation").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/talents/**").permitAll()
+                        .requestMatchers("/api/v1/users/forgot-password").permitAll()
+                        .requestMatchers("/api/v1/users/handle-password-reset/**").permitAll()
+                        .requestMatchers("/api/v1/users/reset-password").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(Customizer.withDefaults())

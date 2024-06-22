@@ -37,6 +37,7 @@ public class User implements UserDetails {
     private Role role;
     private boolean enabled = false;
     private String activationHash;
+    private String resetPasswordHash;
 
     private LoginProvider provider;
 
